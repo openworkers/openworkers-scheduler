@@ -1,0 +1,12 @@
+CREATE OR REPLACE FUNCTION cron_update()
+  RETURNS TRIGGER AS $$
+DECLARE
+BEGIN
+  PERFORM pg_notify('cron_update', TG_OP);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER "cron_update"
+  AFTER INSERT OR UPDATE OR DELETE ON crons
+  FOR EACH ROW EXECUTE PROCEDURE cron_update();

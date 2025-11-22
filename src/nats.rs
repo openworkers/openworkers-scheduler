@@ -6,7 +6,7 @@ pub async fn nats_connect() -> Result<async_nats::Client, async_nats::ConnectErr
 
     log::debug!("connecting to nats: {nats_servers}");
 
-    match std::env::var("NATS_CREDS") {
+    match std::env::var("NATS_CREDENTIALS") {
         Ok(credentials) => {
             // Decode the base64 encoded credentials
             let credentials: Vec<u8> = STANDARD

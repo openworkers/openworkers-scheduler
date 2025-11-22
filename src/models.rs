@@ -3,8 +3,9 @@ use std::str;
 use serde::Deserialize;
 use serde::Serialize;
 use sqlx::prelude::FromRow;
-use sqlx::types::time::OffsetDateTime;
 use sqlx::types::Uuid;
+
+pub type UtcDateTime = chrono::DateTime<chrono::Utc>;
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 #[serde(rename_all = "camelCase")]
@@ -13,9 +14,9 @@ pub struct Task {
     pub id: Uuid,
     pub cron_id: Uuid,
     pub worker_id: Uuid,
-    pub replied_at: Option<OffsetDateTime>,
-    pub executed_at: OffsetDateTime,
-    pub scheduled_at: OffsetDateTime,
+    pub replied_at: Option<UtcDateTime>,
+    pub executed_at: UtcDateTime,
+    pub scheduled_at: UtcDateTime,
 }
 
 #[derive(Debug)]
@@ -33,6 +34,10 @@ impl TaskWithCron {
         Self { task, cron }
     }
 
+    pub fn id(&self) -> String {
+        self.task.id.to_string()
+    }
+
     pub fn worker_id(&self) -> String {
         self.task.worker_id.to_string()
     }
@@ -41,12 +46,12 @@ impl TaskWithCron {
         self.task.cron_id.to_string()
     }
 
-    pub fn scheduled_at(&self) -> OffsetDateTime {
+    pub fn scheduled_at(&self) -> UtcDateTime {
         self.task.scheduled_at
     }
 
     pub fn cron_value(&self) -> String {
-        self.cron.value.clone()
+        self.cron.value.to_string()
     }
 
     pub fn to_json(&self) -> serde_json::Value {
@@ -54,20 +59,21 @@ impl TaskWithCron {
             "id": self.cron_id(),
             "workerId": self.worker_id(),
             "cron": self.cron_value(),
-            "scheduledTime": self.scheduled_at().unix_timestamp() * 1000
+            "scheduledTime": self.scheduled_at().timestamp_millis()
         })
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, FromRow)]
+#[derive(Debug, Deserialize, FromRow)]
 #[sqlx(type_name = "crons")]
+#[allow(dead_code)]
 pub struct Cron {
     pub id: Uuid,
     pub value: String,
     pub worker_id: Uuid,
-    pub last_run: OffsetDateTime,
-    pub next_run: OffsetDateTime,
-    pub created_at: OffsetDateTime,
-    pub updated_at: OffsetDateTime,
-    pub deleted_at: Option<OffsetDateTime>,
+    pub last_run: Option<UtcDateTime>,
+    pub next_run: Option<UtcDateTime>,
+    pub created_at: UtcDateTime,
+    pub updated_at: UtcDateTime,
+    pub deleted_at: Option<UtcDateTime>,
 }
