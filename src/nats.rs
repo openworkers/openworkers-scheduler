@@ -7,6 +7,10 @@ pub async fn nats_connect() -> Result<async_nats::Client, async_nats::ConnectErr
     log::debug!("connecting to nats: {nats_servers}");
 
     match std::env::var("NATS_CREDENTIALS") {
+        // No credentials provided
+        Err(_) => async_nats::connect(nats_servers).await,
+        // Empty string means no credentials
+        Ok(ref s) if s.is_empty() => async_nats::connect(nats_servers).await,
         Ok(credentials) => {
             // Decode the base64 encoded credentials
             let credentials: Vec<u8> = STANDARD
@@ -22,6 +26,5 @@ pub async fn nats_connect() -> Result<async_nats::Client, async_nats::ConnectErr
 
             options.connect(nats_servers).await
         }
-        Err(_) => async_nats::connect(nats_servers).await,
     }
 }

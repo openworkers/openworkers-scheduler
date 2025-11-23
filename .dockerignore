@@ -1,0 +1,10 @@
+/target
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+README.md
+.vscode
+.DS_Store
+update_table.sql
