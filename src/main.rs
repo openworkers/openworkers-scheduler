@@ -1,4 +1,3 @@
-use dotenv::dotenv;
 use nats::nats_connect;
 use sqlx::PgPool;
 use sqlx::postgres::PgListener;
@@ -42,7 +41,7 @@ async fn get_next_duration(pool: &PgPool) -> Duration {
 
 #[tokio::main]
 async fn main() {
-    dotenv().ok();
+    dotenvy::dotenv().ok();
     env_logger::init();
 
     log::debug!("start main");

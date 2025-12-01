@@ -4,6 +4,7 @@
     "codegen",
     "croner",
     "dotenv",
+    "dotenvy",
     "nanos",
     "openworkers",
     "pgnotify",
