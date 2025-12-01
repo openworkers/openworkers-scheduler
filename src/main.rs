@@ -1,12 +1,11 @@
 use dotenv::dotenv;
 use nats::nats_connect;
-use sqlx::postgres::PgListener;
 use sqlx::PgPool;
-use std::env;
+use sqlx::postgres::PgListener;
 use std::sync::Arc;
 use tokio::sync::Notify;
-use tokio::time::sleep;
 use tokio::time::Duration;
+use tokio::time::sleep;
 
 mod models;
 mod nats;
@@ -16,9 +15,9 @@ use models::UtcDateTime;
 
 async fn get_next_run(pool: &PgPool) -> Option<UtcDateTime> {
     let value = sqlx::query_scalar!("SELECT next_run FROM crons ORDER BY next_run ASC LIMIT 1")
-        .fetch_one(pool)
+        .fetch_optional(pool)
         .await
-        .expect("Failed to fetch next run time")?;
+        .expect("Failed to query next run time")??;
 
     UtcDateTime::from_timestamp(value.unix_timestamp(), 0)
 }
@@ -46,7 +45,23 @@ async fn main() {
     dotenv().ok();
     env_logger::init();
 
-    let db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    log::debug!("start main");
+
+    let db_url = match std::env::var("DATABASE_URL") {
+        Ok(url) => url,
+        Err(_) => {
+            let host = std::env::var("POSTGRES_HOST").expect("POSTGRES_HOST must be set");
+            let port = std::env::var("POSTGRES_PORT").expect("POSTGRES_PORT must be set");
+            let user = std::env::var("POSTGRES_USER").expect("POSTGRES_USER must be set");
+            let password =
+                std::env::var("POSTGRES_PASSWORD").expect("POSTGRES_PASSWORD must be set");
+            let database = std::env::var("POSTGRES_DB").expect("POSTGRES_DB must be set");
+
+            log::debug!("DATABASE_URL not set, using POSTGRES_* env vars");
+
+            format!("postgres://{user}:{password}@{host}:{port}/{database}")
+        }
+    };
 
     // Connect to the database
     let pool = PgPool::connect(&db_url)
