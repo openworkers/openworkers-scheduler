@@ -10,7 +10,7 @@ Required environment variables:
 
 ```bash
 DATABASE_URL=postgresql://user:password@localhost/db
-NATS_URL=nats://localhost:4222
+NATS_SERVERS=nats://localhost:4222
 ```
 
 ## Usage
