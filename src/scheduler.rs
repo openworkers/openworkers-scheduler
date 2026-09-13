@@ -1,7 +1,6 @@
 use async_nats::Client;
 use chrono::Utc;
 use sqlx::PgPool;
-use sqlx::types::time::OffsetDateTime;
 use std::str::FromStr;
 
 use crate::models::Cron;
@@ -42,8 +41,6 @@ pub async fn run_scheduled_tasks(pool: &PgPool, nats: &Client) -> Result<(), sql
                     };
 
                     log::debug!("Next run time: {}", next);
-
-                    let next = OffsetDateTime::from_unix_timestamp(next.timestamp()).unwrap();
 
                     {
                         let query = "UPDATE crons SET next_run = $1, last_run = $2 WHERE id = $3";

@@ -13,12 +13,10 @@ mod scheduler;
 use models::UtcDateTime;
 
 async fn get_next_run(pool: &PgPool) -> Option<UtcDateTime> {
-    let value = sqlx::query_scalar!("SELECT next_run FROM crons ORDER BY next_run ASC LIMIT 1")
+    sqlx::query_scalar!("SELECT next_run FROM crons ORDER BY next_run ASC LIMIT 1")
         .fetch_optional(pool)
         .await
-        .expect("Failed to query next run time")??;
-
-    UtcDateTime::from_timestamp(value.unix_timestamp(), 0)
+        .expect("Failed to query next run time")?
 }
 
 async fn get_next_duration(pool: &PgPool) -> Duration {
