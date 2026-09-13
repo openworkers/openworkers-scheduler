@@ -1,11 +1,22 @@
 use async_nats::Client;
 use chrono::Utc;
 use sqlx::PgPool;
-use std::str::FromStr;
 
 use crate::models::Cron;
 use crate::models::Task;
 use crate::models::TaskWithCron;
+
+/// The parser both the scheduler and its tests read patterns with.
+///
+/// `sloppy_ranges` keeps `0/7` and `/7` parsing: croner 4 refuses them as
+/// non-standard, and a cron already in the database would stop firing.
+fn parser() -> croner::parser::CronParser {
+    croner::parser::CronParser::builder()
+        .seconds(croner::parser::Seconds::Optional)
+        .dom_and_dow(true)
+        .sloppy_ranges(true)
+        .build()
+}
 
 pub async fn run_scheduled_tasks(pool: &PgPool, nats: &Client) -> Result<(), sqlx::Error> {
     log::debug!("Running scheduled tasks");
@@ -22,7 +33,7 @@ pub async fn run_scheduled_tasks(pool: &PgPool, nats: &Client) -> Result<(), sql
         for cron in crons {
             log::debug!("Calculating next run time for cron: {:?}", cron);
 
-            match croner::Cron::from_str(&cron.value) {
+            match parser().parse(&cron.value) {
                 Err(_) => {
                     log::error!("Invalid cron expression: {}", cron.value);
                     continue;
@@ -98,16 +109,11 @@ pub async fn run_scheduled_tasks(pool: &PgPool, nats: &Client) -> Result<(), sql
 
 #[cfg(test)]
 mod tests {
+    use super::parser;
     use chrono::Timelike;
 
     fn cron(pattern: &str) -> Result<croner::Cron, croner::errors::CronError> {
-        croner::parser::CronParser::builder()
-            // Include seconds in pattern
-            .seconds(croner::parser::Seconds::Optional)
-            // Ensure both day of month and day of week conditions are met
-            .dom_and_dow(true)
-            .build()
-            .parse(pattern)
+        parser().parse(pattern)
     }
 
     #[tokio::test]
@@ -126,7 +132,7 @@ mod tests {
         assert!(cron("0 0 * * * *").is_ok()); // Every hour
         assert!(cron("0 * * * * *").is_ok()); // Every minute
         assert!(cron("* * * * * *").is_ok()); // Every second
-        assert!(cron("/7 * * * * *").is_err());
+        assert!(cron("/7 * * * * *").is_ok()); // Every 7 seconds
         assert!(cron("*/7 * * * * *").is_ok()); // Every 7 seconds
         assert!(cron("0/7 * * * * *").is_ok()); // Every 7 seconds
         assert!(cron("1/7 * * * * *").is_ok()); // Every 7 seconds, starting at 1 seconds past the minute

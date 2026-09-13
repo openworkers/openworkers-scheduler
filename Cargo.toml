@@ -1,13 +1,13 @@
 [package]
 name = "openworkers-scheduler"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2024"
 
 [dependencies]
 async-nats = "0.50.0"
-base64 = "0.22.1"
+base64 = "0.23"
 chrono = { version = "0.4.39", features = ["serde"] }
-croner = "3.0.1"
+croner = "4.0.0"
 dotenvy = "0.15.7"
 env_logger = "0.11.8"
 log = "0.4.28"
