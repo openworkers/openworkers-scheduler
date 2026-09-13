@@ -1,3 +1,5 @@
+mod telemetry;
+
 use nats::nats_connect;
 use sqlx::PgPool;
 use sqlx::postgres::PgListener;
@@ -40,7 +42,7 @@ async fn get_next_duration(pool: &PgPool) -> Duration {
 #[tokio::main]
 async fn main() {
     dotenvy::dotenv().ok();
-    env_logger::init();
+    telemetry::init();
 
     log::debug!("start main");
 
